@@ -11,7 +11,9 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
+
+    # só roda em push/PR com "BUILD" em maiúsculas
     if: >
       (github.event_name == 'push' &&
        (startsWith(github.ref, 'refs/heads/main') ||
@@ -32,35 +34,38 @@ jobs:
         run: |
           git fetch --prune --tags
 
-          # tenta obter última tag; se falhar, marca que não há
-          if git rev-parse --verify --quiet "$(git describe --tags --abbrev=0)"; then
-            LAST_TAG=$(git describe --tags --abbrev=0)
-            RANGE="$LAST_TAG..HEAD"
-          else
+          # obtém última tag ou usa v0.0.0 se não existir
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+
+          # define o range de commits
+          if [ "$LAST_TAG" = "v0.0.0" ]; then
             RANGE="HEAD"
-            LAST_TAG="v0.0.0"
+          else
+            RANGE="$LAST_TAG..HEAD"
           fi
 
-          # extrai os IDs usando o RANGE correto
-          IDS_FRJ=( $(git log $RANGE --grep 'FRJ-' --pretty=%s \
+          # extrai FRJ e SUS únicos no range
+          IDS_FRJ=( $(git log "$RANGE" --grep 'FRJ-' --pretty=%s \
                     | grep -o 'FRJ-[0-9]\+' | sort -u) )
-          IDS_SUS=( $(git log $RANGE --grep 'SUS-' --pretty=%s \
+          IDS_SUS=( $(git log "$RANGE" --grep 'SUS-' --pretty=%s \
                     | grep -o 'SUS-[0-9]\+' | sort -u) )
 
           COUNT_FRJ=${#IDS_FRJ[@]}
           COUNT_SUS=${#IDS_SUS[@]}
           SHORT_COMMIT=$(git rev-parse --short HEAD)
+
           SUMMARY="$LAST_TAG+f${COUNT_FRJ}s${COUNT_SUS}"
           KEY="${SUMMARY}-h${SHORT_COMMIT}"
+
           echo "FULL_VERSION_SUMMARY=$SUMMARY" >> $GITHUB_ENV
           echo "FULL_VERSION_KEY=$KEY"         >> $GITHUB_ENV
 
       - name: Build WebGL
         uses: game-ci/unity-builder@v4
         env:
-          UNITY_SERIAL:    ${{ secrets.UNITY_SERIAL }}
-          UNITY_EMAIL:     ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD:  ${{ secrets.UNITY_PASSWORD }}
+          UNITY_SERIAL:   ${{ secrets.UNITY_SERIAL }}
+          UNITY_EMAIL:    ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
           unityVersion:   2022.3.61f1
           targetPlatform: WebGL
