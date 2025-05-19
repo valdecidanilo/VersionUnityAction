@@ -17,11 +17,11 @@ jobs:
        (startsWith(github.ref, 'refs/heads/main') ||
         startsWith(github.ref, 'refs/heads/dev')) &&
        contains(github.event.head_commit.message, 'BUILD') &&
-       !contains(github.event.head_commit.message, 'build')
+       !contains(github.event.head_commit.message, 'build'))
       ||
       (github.event_name == 'pull_request' &&
        contains(github.event.pull_request.title, 'BUILD') &&
-       !contains(github.event.pull_request.title, 'build')
+       !contains(github.event.pull_request.title, 'build'))
 
     steps:
       - name: Checkout
