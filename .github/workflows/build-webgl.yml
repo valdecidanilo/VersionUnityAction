@@ -12,16 +12,14 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
-    # só roda se for push/PR em main ou dev E tiver "BUILD" na mensagem/título
     if: >
       (github.event_name == 'push' &&
        (startsWith(github.ref, 'refs/heads/main') ||
         startsWith(github.ref, 'refs/heads/dev')) &&
-       contains(github.event.head_commit.message, 'BUILD'))
+       contains(github.event.head_commit.message, '.*BUILD.*'))
       ||
       (github.event_name == 'pull_request' &&
-       contains(github.event.pull_request.title, 'BUILD'))
+       contains(github.event.pull_request.title, '.*BUILD.*'))
 
     steps:
       - name: Checkout
@@ -32,12 +30,22 @@ jobs:
       - name: Setting Version in Scriptable
         run: |
           git fetch --prune --tags
-          
-          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          IDS_FRJ=( $(git log $LAST_TAG..HEAD --grep 'FRJ-' --pretty=%s \
+
+          # tenta obter última tag; se falhar, marca que não há
+          if git rev-parse --verify --quiet "$(git describe --tags --abbrev=0)"; then
+            LAST_TAG=$(git describe --tags --abbrev=0)
+            RANGE="$LAST_TAG..HEAD"
+          else
+            RANGE="HEAD"
+            LAST_TAG="v0.0.0"
+          fi
+
+          # extrai os IDs usando o RANGE correto
+          IDS_FRJ=( $(git log $RANGE --grep 'FRJ-' --pretty=%s \
                     | grep -o 'FRJ-[0-9]\+' | sort -u) )
-          IDS_SUS=( $(git log $LAST_TAG..HEAD --grep 'SUS-' --pretty=%s \
+          IDS_SUS=( $(git log $RANGE --grep 'SUS-' --pretty=%s \
                     | grep -o 'SUS-[0-9]\+' | sort -u) )
+
           COUNT_FRJ=${#IDS_FRJ[@]}
           COUNT_SUS=${#IDS_SUS[@]}
           SHORT_COMMIT=$(git rev-parse --short HEAD)
@@ -50,8 +58,6 @@ jobs:
         uses: game-ci/unity-builder@v4
         env:
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-          UNITY_EMAIL:    ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
           unityVersion:   2022.3.61f1
           targetPlatform: WebGL
