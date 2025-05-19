@@ -28,6 +28,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setting Version in Scriptable
+        shell: bash
         run: |
           git fetch --prune --tags
 
