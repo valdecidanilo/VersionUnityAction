@@ -14,11 +14,13 @@ jobs:
     runs-on: ubuntu-latest
 
     # só roda se for push/PR em main ou dev E tiver "BUILD" na mensagem/título
-    if: |
-      (startsWith(github.ref, 'refs/heads/main') ||
-       startsWith(github.ref, 'refs/heads/dev') ||
-       github.event_name == 'pull_request') &&
-      (contains(github.event.head_commit.message, 'BUILD') ||
+    if: >
+      (github.event_name == 'push' &&
+       (startsWith(github.ref, 'refs/heads/main') ||
+        startsWith(github.ref, 'refs/heads/dev')) &&
+       contains(github.event.head_commit.message, 'BUILD'))
+      ||
+      (github.event_name == 'pull_request' &&
        contains(github.event.pull_request.title, 'BUILD'))
 
     steps:
@@ -29,7 +31,7 @@ jobs:
 
       - name: Calcular versão
         run: |
-          git fetch --prune --unshallow --tags
+          git fetch --prune --tags
           
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
           IDS_FRJ=( $(git log $LAST_TAG..HEAD --grep 'FRJ-' --pretty=%s \
