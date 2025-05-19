@@ -16,10 +16,10 @@ jobs:
       (github.event_name == 'push' &&
        (startsWith(github.ref, 'refs/heads/main') ||
         startsWith(github.ref, 'refs/heads/dev')) &&
-       contains(github.event.head_commit.message, '.*BUILD.*'))
+       match(github.event.head_commit.message, '.*\\bBUILD\\b.*')
       ||
       (github.event_name == 'pull_request' &&
-       contains(github.event.pull_request.title, '.*BUILD.*'))
+       match(github.event.pull_request.title, '.*\\bBUILD\\b.*')
 
     steps:
       - name: Checkout
