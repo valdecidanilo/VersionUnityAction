@@ -1,4 +1,4 @@
-name: CI – Build WebGL
+name: CI – Build condicional WebGL
 
 on:
   push:
@@ -12,6 +12,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
+    # só roda se for push/PR em main ou dev E tiver "BUILD" na mensagem/título
     if: |
       (startsWith(github.ref, 'refs/heads/main') ||
        startsWith(github.ref, 'refs/heads/dev') ||
@@ -43,17 +45,12 @@ jobs:
       - name: Build WebGL with Unity Builder
         uses: game-ci/unity-builder@v2
         env:
-          # para Personal License
           UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
-          # ou Professional License
           UNITY_EMAIL:   ${{ secrets.UNITY_EMAIL }}
-          UNITY_PASSWORD:${{ secrets.UNITY_PASSWORD }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
-          # plataforma alvo
           targetPlatform: WebGL
-          # pasta base do projeto (onde está Assets/)
           projectPath:    .
-          # optional: nome da pasta de saída (default é WebGL)
           buildName:      WebGL
 
       - name: Upload WebGL artifact
