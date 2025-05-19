@@ -29,7 +29,9 @@ jobs:
 
       - name: Calcular versão
         run: |
-          LAST_TAG=$(git describe --tags --abbrev=0)
+          git fetch --prune --unshallow --tags
+          
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
           IDS_FRJ=( $(git log $LAST_TAG..HEAD --grep 'FRJ-' --pretty=%s \
                     | grep -o 'FRJ-[0-9]\+' | sort -u) )
           IDS_SUS=( $(git log $LAST_TAG..HEAD --grep 'SUS-' --pretty=%s \
