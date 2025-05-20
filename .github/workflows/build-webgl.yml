@@ -55,7 +55,13 @@ jobs:
           KEY="${SUMMARY}-h${SHORT_COMMIT}"
           echo "FULL_VERSION_SUMMARY=$SUMMARY" >> $GITHUB_ENV
           echo "FULL_VERSION_KEY=$KEY"         >> $GITHUB_ENV
-
+      - name: Cache Unity Library
+        uses: actions/cache@v3
+        with:
+          path: Library
+          key: ${{ runner.os }}-unity-${{ hashFiles('**/ProjectSettings/ProjectVersion.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-unity-
       - name: Build WebGL
         uses: game-ci/unity-builder@v4
         env:
