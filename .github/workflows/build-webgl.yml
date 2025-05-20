@@ -11,7 +11,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     if: >
       (github.event_name == 'push' &&
@@ -38,7 +38,6 @@ jobs:
           else
             RANGE="$LAST_TAG..HEAD"
           fi
-
           IDS_FRJ=( $(
             git log "$RANGE" --grep 'FRJ-' --pretty=%s \
               | grep -o 'FRJ-[0-9]\+' || true \
@@ -49,14 +48,11 @@ jobs:
               | grep -o 'SUS-[0-9]\+' || true \
               | sort -u
           ) )
-
           COUNT_FRJ=${#IDS_FRJ[@]}
           COUNT_SUS=${#IDS_SUS[@]}
           SHORT_COMMIT=$(git rev-parse --short HEAD)
-
           SUMMARY="$LAST_TAG+f${COUNT_FRJ}s${COUNT_SUS}"
           KEY="${SUMMARY}-h${SHORT_COMMIT}"
-
           echo "FULL_VERSION_SUMMARY=$SUMMARY" >> $GITHUB_ENV
           echo "FULL_VERSION_KEY=$KEY"         >> $GITHUB_ENV
 
@@ -71,6 +67,7 @@ jobs:
           targetPlatform: WebGL
           projectPath:    .
           buildName:      WebGL
+          runAsHostUser:  true
 
       - name: Upload WebGL artifact
         uses: actions/upload-artifact@v4
