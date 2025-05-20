@@ -11,9 +11,8 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
-    # só dispara em push/PR com BUILD em maiúsculas
     if: >
       (github.event_name == 'push' &&
        (startsWith(github.ref, 'refs/heads/main') ||
@@ -29,7 +28,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setting Version in Scriptable
+      - name: Setting Version in ScriptableObject
         shell: bash
         run: |
           git fetch --prune --tags
@@ -64,16 +63,14 @@ jobs:
       - name: Build WebGL
         uses: game-ci/unity-builder@v4
         env:
+          UNITY_LICENSE:  ${{ secrets.UNITY_LICENSE }}
           UNITY_EMAIL:    ${{ secrets.UNITY_EMAIL }}
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
-          UNITY_LICENSE:  ${{ secrets.UNITY_LICENSE }}
-          #UNITY_SERIAL:   ${{ secrets.UNITY_SERIAL }}
         with:
-          unityVersion:    2022.3.61f1
-          targetPlatform:  WebGL
-          projectPath:     .
-          buildName:       WebGL
-          runAsHostUser:   true     # <— monta o home do runner, evitando erros de cache em /root
+          unityVersion:   2022.3.61f1
+          targetPlatform: WebGL
+          projectPath:    .
+          buildName:      WebGL
 
       - name: Upload WebGL artifact
         uses: actions/upload-artifact@v4
