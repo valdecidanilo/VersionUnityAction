@@ -2,18 +2,14 @@ name: CI – Build WebGL
 
 on:
   push:
-    branches:
-      - main
-      - dev
+    branches: [ main, dev ]
   pull_request:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
-    # só roda em push/PR com "BUILD" em maiúsculas
     if: >
       (github.event_name == 'push' &&
        (startsWith(github.ref, 'refs/heads/main') ||
@@ -34,21 +30,24 @@ jobs:
         run: |
           git fetch --prune --tags
 
-          # obtém última tag ou usa v0.0.0 se não existir
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-
-          # define o range de commits
           if [ "$LAST_TAG" = "v0.0.0" ]; then
             RANGE="HEAD"
           else
             RANGE="$LAST_TAG..HEAD"
           fi
 
-          # extrai FRJ e SUS únicos no range
-          IDS_FRJ=( $(git log "$RANGE" --grep 'FRJ-' --pretty=%s \
-                    | grep -o 'FRJ-[0-9]\+' | sort -u) )
-          IDS_SUS=( $(git log "$RANGE" --grep 'SUS-' --pretty=%s \
-                    | grep -o 'SUS-[0-9]\+' | sort -u) )
+          # Esses || true garantem que o pipeline não quebre se não houver matches
+          IDS_FRJ=( $(
+            git log "$RANGE" --grep 'FRJ-' --pretty=%s \
+              | grep -o 'FRJ-[0-9]\+' || true \
+              | sort -u
+          ) )
+          IDS_SUS=( $(
+            git log "$RANGE" --grep 'SUS-' --pretty=%s \
+              | grep -o 'SUS-[0-9]\+' || true \
+              | sort -u
+          ) )
 
           COUNT_FRJ=${#IDS_FRJ[@]}
           COUNT_SUS=${#IDS_SUS[@]}
