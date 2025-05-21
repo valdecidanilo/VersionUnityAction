@@ -28,16 +28,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setting Version in ScriptableObject
+      - name: Calculate version
         shell: bash
         run: |
           git fetch --prune --tags
+
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
           if [ "$LAST_TAG" = "v0.0.0" ]; then
             RANGE="HEAD"
           else
             RANGE="$LAST_TAG..HEAD"
           fi
+
           IDS_FRJ=( $(
             git log "$RANGE" --grep 'FRJ-' --pretty=%s \
               | grep -o 'FRJ-[0-9]\+' || true \
@@ -48,13 +50,17 @@ jobs:
               | grep -o 'SUS-[0-9]\+' || true \
               | sort -u
           ) )
+
           COUNT_FRJ=${#IDS_FRJ[@]}
           COUNT_SUS=${#IDS_SUS[@]}
           SHORT_COMMIT=$(git rev-parse --short HEAD)
+
           SUMMARY="$LAST_TAG+f${COUNT_FRJ}s${COUNT_SUS}"
           KEY="${SUMMARY}-h${SHORT_COMMIT}"
+
           echo "FULL_VERSION_SUMMARY=$SUMMARY" >> $GITHUB_ENV
           echo "FULL_VERSION_KEY=$KEY"         >> $GITHUB_ENV
+
       - name: Cache Unity Library
         uses: actions/cache@v3
         with:
@@ -62,6 +68,13 @@ jobs:
           key: ${{ runner.os }}-unity-${{ hashFiles('**/ProjectSettings/ProjectVersion.txt') }}
           restore-keys: |
             ${{ runner.os }}-unity-
+
+      - name: Write version in Runtime
+        shell: bash
+        run: |
+          mkdir -p Assets/StreamingAssets
+          echo "$FULL_VERSION_SUMMARY" > Assets/StreamingAssets/version.txt
+
       - name: Build WebGL
         uses: game-ci/unity-builder@v4
         env:
@@ -75,7 +88,6 @@ jobs:
           projectPath:    .
           buildName:      WebGL
           runAsHostUser:  true
-          preBuildMethod:    BuildInfo.Editor.BuildInfoGenerator.SetBuildInfo
 
       - name: Upload WebGL artifact
         uses: actions/upload-artifact@v4
