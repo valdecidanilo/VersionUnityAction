@@ -10,7 +10,11 @@ namespace BuildInfo
     {
         [SerializeField] private TMP_Text versionText;
 
-        private IEnumerator Start()
+        private void Start()
+        {
+            StartCoroutine(InitializeVersion());
+        }
+        private IEnumerator InitializeVersion()
         {
             var version = "n/a";
             var path = Path.Combine(Application.streamingAssetsPath, "version.txt");
