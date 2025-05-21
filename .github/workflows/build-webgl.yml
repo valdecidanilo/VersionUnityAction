@@ -75,7 +75,7 @@ jobs:
           projectPath:    .
           buildName:      WebGL
           runAsHostUser:  true
-          preBuildMethod:    BuildInfoGenerator.SetBuildInfo
+          preBuildMethod:    BuildInfo.Editor.BuildInfoGenerator.SetBuildInfo
 
       - name: Upload WebGL artifact
         uses: actions/upload-artifact@v4
