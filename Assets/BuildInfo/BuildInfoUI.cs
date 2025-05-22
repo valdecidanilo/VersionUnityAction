@@ -35,7 +35,9 @@ namespace BuildInfo
                     Debug.LogError($"[Build Info] Ao ler version.txt: {www.error}");
             }
 
-            versionText.text = version;
+            var lines = content.Split(new[] {'\n','\r'}, System.StringSplitOptions.RemoveEmptyEntries);
+            var key = lines.Length > 1 ? lines[1] : lines[0];
+            versionText.text = key.Trim();
         }
     }
 }
