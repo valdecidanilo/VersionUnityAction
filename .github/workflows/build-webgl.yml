@@ -12,8 +12,8 @@ jobs:
 
     if: >
       (github.event_name == 'push' &&
-       ( startsWith(github.ref, 'refs/heads/main') ||
-         startsWith(github.ref, 'refs/heads/dev') ) &&
+       (startsWith(github.ref, 'refs/heads/main') ||
+        startsWith(github.ref, 'refs/heads/dev')) &&
        contains(github.event.head_commit.message, 'BUILD'))
       ||
       (github.event_name == 'pull_request' &&
@@ -38,8 +38,9 @@ jobs:
           COUNT_FRJ=${#IDS_FRJ[@]}; COUNT_SUS=${#IDS_SUS[@]}
           SHORT_COMMIT=$(git rev-parse --short HEAD)
           SUMMARY="$LAST_TAG+f${COUNT_FRJ}s${COUNT_SUS}"
+          KEY="$SUMMARY-h$SHORT_COMMIT"
           echo "FULL_VERSION_SUMMARY=$SUMMARY" >> $GITHUB_ENV
-          echo "FULL_VERSION_KEY=$SUMMARY-h$SHORT_COMMIT" >> $GITHUB_ENV
+          echo "FULL_VERSION_KEY=$KEY"         >> $GITHUB_ENV
 
       - name: Cache Unity Library
         uses: actions/cache@v3
@@ -48,11 +49,16 @@ jobs:
           key: ${{ runner.os }}-unity-${{ hashFiles('**/ProjectSettings/ProjectVersion.txt') }}
           restore-keys: ${{ runner.os }}-unity-
 
-      - name: Write version in Runtime
+      - name: Write version into JSON
         shell: bash
         run: |
           mkdir -p Assets/StreamingAssets
-          echo "$FULL_VERSION_SUMMARY" > Assets/StreamingAssets/version.txt
+          cat <<EOF > Assets/StreamingAssets/version.json
+          {
+            "summary": "${FULL_VERSION_SUMMARY}",
+            "key":     "${FULL_VERSION_KEY}"
+          }
+          EOF
 
       - name: Build WebGL
         uses: game-ci/unity-builder@v4
@@ -67,10 +73,10 @@ jobs:
           projectPath:     .
           buildName:       WebGL
           runAsHostUser:   true
-          allowDirtyBuild: true 
+          allowDirtyBuild: true
 
       - name: Upload WebGL artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Build-WebGL-${{ github.ref_name }}
+          name: Build-WebGL-${{ github.ref_name }}-${{ env.FULL_VERSION_KEY }}
           path: build/WebGL
