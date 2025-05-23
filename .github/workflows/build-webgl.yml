@@ -12,13 +12,16 @@ jobs:
 
     # só dispara se tiver “BUILD” em maiúsculas
     if: >
-      (github.event_name == 'push' &&
-       (startsWith(github.ref, 'refs/heads/main') ||
-        startsWith(github.ref, 'refs/heads/dev')) &&
-       contains(github.event.head_commit.message, 'BUILD'))
+      ( github.event_name == 'push' &&
+        ( startsWith(github.ref, 'refs/heads/main') || startsWith(github.ref, 'refs/heads/dev') ) &&
+        contains(github.event.head_commit.message, 'BUILD') &&
+        !contains(github.event.head_commit.message, 'build')
+      )
       ||
-      (github.event_name == 'pull_request' &&
-       contains(github.event.pull_request.title, 'BUILD'))
+      ( github.event_name == 'pull_request' &&
+        contains(github.event.pull_request.title, 'BUILD') &&
+        !contains(github.event.pull_request.title, 'build')
+      )
 
     # define ambiente automático
     env:
