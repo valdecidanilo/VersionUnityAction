@@ -10,6 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    # só dispara se tiver “BUILD” em maiúsculas
     if: >
       (github.event_name == 'push' &&
        (startsWith(github.ref, 'refs/heads/main') ||
@@ -18,6 +19,10 @@ jobs:
       ||
       (github.event_name == 'pull_request' &&
        contains(github.event.pull_request.title, 'BUILD'))
+
+    # define ambiente automático
+    env:
+      ENVIRONMENT: ${{ github.event_name == 'pull_request' && 'qa' || github.ref_name == 'dev' && 'dev' || github.ref_name == 'main' && 'prod' || 'unknown' }}
 
     steps:
       - name: Checkout
@@ -32,12 +37,13 @@ jobs:
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
           if [ "$LAST_TAG" = "v0.0.0" ]; then RANGE="HEAD"; else RANGE="$LAST_TAG..HEAD"; fi
           IDS_FRJ=( $(git log "$RANGE" --grep 'FRJ-' --pretty=%s \
-            | grep -o 'FRJ-[0-9]\+' || true | sort -u) )
+                    | grep -o 'FRJ-[0-9]\+' || true | sort -u) )
           IDS_SUS=( $(git log "$RANGE" --grep 'SUS-' --pretty=%s \
-            | grep -o 'SUS-[0-9]\+' || true | sort -u) )
-          COUNT_FRJ=${#IDS_FRJ[@]}; COUNT_SUS=${#IDS_SUS[@]}
+                    | grep -o 'SUS-[0-9]\+' || true | sort -u) )
+          COUNT_FRJ=${#IDS_FRJ[@]}
+          COUNT_SUS=${#IDS_SUS[@]}
           SHORT_COMMIT=$(git rev-parse --short HEAD)
-          SUMMARY="$LAST_TAG+f${COUNT_FRJ}s${COUNT_SUS}"
+          SUMMARY="$LAST_TAG-${ENVIRONMENT}+f${COUNT_FRJ}s${COUNT_SUS}"
           KEY="$SUMMARY-h$SHORT_COMMIT"
           echo "FULL_VERSION_SUMMARY=$SUMMARY" >> $GITHUB_ENV
           echo "FULL_VERSION_KEY=$KEY"         >> $GITHUB_ENV
@@ -47,9 +53,10 @@ jobs:
         with:
           path: Library
           key: ${{ runner.os }}-unity-${{ hashFiles('**/ProjectSettings/ProjectVersion.txt') }}
-          restore-keys: ${{ runner.os }}-unity-
+          restore-keys: |
+            ${{ runner.os }}-unity-
 
-      - name: Write version into JSON
+      - name: Write version into StreamingAssets as JSON
         shell: bash
         run: |
           mkdir -p Assets/StreamingAssets
@@ -78,5 +85,5 @@ jobs:
       - name: Upload WebGL artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Build-WebGL-${{ github.ref_name }}-${{ env.FULL_VERSION_KEY }}
+          name: ${{ env.FULL_VERSION_KEY }}
           path: build/WebGL
