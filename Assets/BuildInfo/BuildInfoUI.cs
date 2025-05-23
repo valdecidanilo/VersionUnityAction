@@ -10,32 +10,44 @@ namespace BuildInfo
     {
         [SerializeField] private TMP_Text versionText;
 
-        private void Start()
+        private IEnumerator Start()
         {
-            StartCoroutine(InitializeVersion());
-        }
-        private IEnumerator InitializeVersion()
-        {
-            var version = "n/a";
-            var path = Path.Combine(Application.streamingAssetsPath, "version.txt");
-
             if (versionText == null)
             {
-                Debug.LogWarning("[Build Info] VersionDisplay: versionText não atribuído");
+                Debug.LogWarning("[BuildInfoUI] versionText não atribuído");
                 yield break;
             }
 
-            if (Application.platform == RuntimePlatform.WebGLPlayer)
+            string jsonPath = Path.Combine(Application.streamingAssetsPath, "version.json");
+            string jsonText;
+
+            if (Application.platform == RuntimePlatform.WebGLPlayer ||
+                Application.platform == RuntimePlatform.Android)
             {
-                using var www = UnityWebRequest.Get(path);
+                using var www = UnityWebRequest.Get(jsonPath);
                 yield return www.SendWebRequest();
-                if (www.result == UnityWebRequest.Result.Success)
-                    version = www.downloadHandler.text.Trim();
-                else
-                    Debug.LogError($"[Build Info] Ao ler version.txt: {www.error}");
+                if (www.result != UnityWebRequest.Result.Success)
+                {
+                    Debug.LogError($"[BuildInfoUI] Falha ao ler JSON: {www.error}");
+                    yield break;
+                }
+                jsonText = www.downloadHandler.text;
+            }
+            else
+            {
+                try
+                {
+                    jsonText = File.ReadAllText(jsonPath);
+                }
+                catch (IOException e)
+                {
+                    Debug.LogError($"[BuildInfoUI] Erro ao ler JSON: {e.Message}");
+                    yield break;
+                }
             }
 
-            versionText.text = version;
+            var data = JsonUtility.FromJson<VersionData>(jsonText);
+            versionText.text = data.key;
         }
     }
 }
