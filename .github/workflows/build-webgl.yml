@@ -14,13 +14,18 @@ jobs:
     if: >
       (
         github.event_name == 'push' &&
-        (startsWith(github.ref, 'refs/heads/main') || startsWith(github.ref, 'refs/heads/dev')) &&
-        contains(github.event.head_commit.message, 'BUILD')
+        (
+          startsWith(github.ref, 'refs/heads/main') ||
+          startsWith(github.ref, 'refs/heads/dev')
+        ) &&
+        contains(github.event.head_commit.message, 'BUILD') &&
+        not(contains(github.event.head_commit.message, 'build'))
       )
       ||
       (
         github.event_name == 'pull_request' &&
-        contains(github.event.pull_request.title, 'BUILD')
+        contains(github.event.pull_request.title, 'BUILD') &&
+        not(contains(github.event.pull_request.title, 'build'))
       )
 
     # define ambiente automático
