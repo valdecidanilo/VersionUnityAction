@@ -5,12 +5,22 @@ on:
     branches: [ main, dev ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'version bump'
+        required: false
+        default: patch
+        type: choice
+        options:
+          - major
+          - minor
+          - patch
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
-    # só dispara se tiver “BUILD” em maiúsculas
     if: >
       (
         github.event_name == 'push' &&
@@ -23,7 +33,6 @@ jobs:
         contains(github.event.pull_request.title, 'BUILD')
       )
 
-    # define ambiente automático
     env:
       ENVIRONMENT: ${{ github.event_name == 'pull_request' && 'qa' || github.ref_name == 'dev' && 'dev' || github.ref_name == 'main' && 'prod' || 'unknown' }}
 
